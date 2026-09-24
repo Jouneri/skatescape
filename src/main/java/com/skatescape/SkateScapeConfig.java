@@ -155,8 +155,8 @@ public interface SkateScapeConfig extends Config {
     @ConfigItem(
             keyName = "tuningSelectedTrickV132",
             name = "Trick",
-            description = "Choose which trick these tuning controls edit",
-            hidden = true,
+            description = "Choose the trick for all trick-authoring tools",
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 0,
             section = trickTuningSection
     )
@@ -168,8 +168,8 @@ public interface SkateScapeConfig extends Config {
     @ConfigItem(
             keyName = "tuningDurationMsV132",
             name = "Trick duration (ms)",
-            description = "Duration of the selected trick's main action. Player pose timing and all board timing percentages follow this duration",
-            hidden = true,
+            description = "Duration of the selected trick's main action. Player frame timing and all board timing percentages follow this duration",
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 1,
             section = trickTuningSection
     )
@@ -182,7 +182,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningPopHeightV132",
             name = "Board pop height",
             description = "How high the skateboard rises during the selected trick",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 2,
             section = trickTuningSection
     )
@@ -194,7 +194,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningPopStartCycleV132",
             name = "Pop starts (%)",
             description = "Point in the MAIN timeline where the board begins rising",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 3,
             section = trickTuningSection
     )
@@ -206,7 +206,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningKickflipStartCycleV132",
             name = "Kickflip starts (%)",
             description = "Point in the MAIN timeline where the selected trick's primary board rotation starts",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 4,
             section = trickTuningSection
     )
@@ -218,7 +218,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningKickflipEndCycleV132",
             name = "Kickflip ends (%)",
             description = "Point in the MAIN timeline where the primary board rotation ends",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 5,
             section = trickTuningSection
     )
@@ -231,7 +231,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningTrick5KickflipDegreesV146",
             name = "Kickflip rotation (degrees)",
             description = "Kickflip rotation amount. Christ Air additionally supports 540 and 720 degrees.",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 6,
             section = trickTuningSection
     )
@@ -244,7 +244,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningTrick4ImpossibleDegreesV147",
             name = "360 Shove-it rotation (degrees)",
             description = "Kickflip 360 Shove-it Body Varial: choose 180 or 360 degrees of Shove-it rotation",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 12,
             section = trickTuningSection
     )
@@ -256,7 +256,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningImpossibleStartCycleV132",
             name = "360 Shove-it starts (%)",
             description = "Shared secondary control: Shove-it timing for Kickflip 360 Shove-it Body Varial; Shove-it rotation amount for 360 Shove-it, Varial Kickflip and Christ Air",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 9,
             section = trickTuningSection
     )
@@ -268,7 +268,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningVarialShoveStartCycleV142",
             name = "Varial Shove-it starts (%)",
             description = "Varial Kickflip: point in the MAIN timeline where the Shove-it rotation starts",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 7,
             section = trickTuningSection
     )
@@ -280,7 +280,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningVarialShoveEndCycleV142",
             name = "Varial Shove-it ends (%)",
             description = "Varial Kickflip: point in the MAIN timeline where the Shove-it rotation ends",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 8,
             section = trickTuningSection
     )
@@ -292,7 +292,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningCatchCycleV132",
             name = "Board catch (%)",
             description = "Point in the MAIN timeline where the board is caught. On Kickflip 360 Shove-it Body Varial, this also ends the Shove-it rotation.",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 10,
             section = trickTuningSection
     )
@@ -304,7 +304,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningTouchdownCycleV132",
             name = "Board touchdown (%)",
             description = "Point in the MAIN timeline where the board reaches the ground",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 11,
             section = trickTuningSection
     )
@@ -324,7 +324,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningQueuedExitCycleV182",
             name = "Queued exit cycle",
             description = "If another trick is already queued, stop the selected current trick at this Trick Inspector cycle. The visual splice point stays aligned when Trick duration changes",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 23,
             section = trickTuningSection
     )
@@ -337,7 +337,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "tuningQueuedStartCycleV182",
             name = "Queued start cycle",
             description = "When the selected trick starts from a queue, begin it at this Trick Inspector cycle. The visual splice point stays aligned when Trick duration changes",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 24,
             section = trickTuningSection
     )
@@ -354,7 +354,7 @@ public interface SkateScapeConfig extends Config {
     @ConfigItem(
             keyName = "trick5BoardFrameSlotV197",
             name = "Board frame",
-            description = "Choose the exact Christ Air player frame to edit. Trick Inspector follows this frame, and Inspector browsing follows this selector.",
+            description = "Internal Christ Air board-keyframe selection. Trick Inspector controls this automatically.",
             hidden = true,
             position = 15,
             section = trickTuningSection
@@ -366,8 +366,8 @@ public interface SkateScapeConfig extends Config {
     @ConfigItem(
             keyName = "trick5BoardFrameLockV198",
             name = "Keyframe lock",
-            description = "Lock this Christ Air board frame's XYZ and rotation values and hold that exact board transform for the entire matching player frame. Board frame still follows Trick Inspector.",
-            hidden = true,
+            description = "Lock this Christ Air board frame's XYZ and rotation values and hold that exact board transform for the entire matching player frame. The active board keyframe follows Trick Inspector.",
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 16,
             section = trickTuningSection
     )
@@ -380,7 +380,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "trick5BoardFrameXV197",
             name = "X - right / left",
             description = "Board target on the sideways axis for the selected frame. Positive moves right; negative moves left.",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 17,
             section = trickTuningSection
     )
@@ -393,7 +393,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "trick5BoardFrameYV197",
             name = "Y - up / down",
             description = "Board height target for the selected frame. Zero is the normal under-feet height; positive moves up; negative moves down.",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 18,
             section = trickTuningSection
     )
@@ -406,7 +406,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "trick5BoardFrameZV197",
             name = "Z - forward / back",
             description = "Board target on the forward axis for the selected frame. Positive moves forward; negative moves backward.",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 19,
             section = trickTuningSection
     )
@@ -419,7 +419,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "trick5BoardFramePitchV197",
             name = "Pitch",
             description = "Board pitch in degrees for the selected frame.",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 20,
             section = trickTuningSection
     )
@@ -432,7 +432,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "trick5BoardFrameYawV197",
             name = "Yaw",
             description = "Board yaw in degrees for the selected frame.",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 21,
             section = trickTuningSection
     )
@@ -445,7 +445,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "trick5BoardFrameRollV197",
             name = "Roll",
             description = "Board roll in degrees for the selected frame.",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 22,
             section = trickTuningSection
     )
@@ -473,7 +473,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "trickInspectorEnabledV132",
             name = "Enable trick inspector",
             description = "Freeze the selected trick's real player + board timeline",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 1,
             section = trickInspectorSection
     )
@@ -486,7 +486,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "trickInspectorCycleV132",
             name = "Trick position (cycle)",
             description = "Complete selected-trick timeline position. Left = rewind, Right = forward. One cycle is about 20 ms",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 2,
             section = trickInspectorSection
     )
@@ -510,25 +510,13 @@ public interface SkateScapeConfig extends Config {
         return TrickSelection.KICKFLIP;
     }
 
-    @Range(min = 1, max = 19)
-    @ConfigItem(
-            keyName = "poseSequenceLengthV132",
-            name = "Pose sequence length",
-            description = "Number of active entries from the selected trick's animation/frame lists. Kickflip, 360 Shove-it and Varial Kickflip max at 12 poses; Kickflip 360 Shove-it Body Varial maxes at 19; Christ Air maxes at 9",
-            hidden = true,
-            position = 1,
-            section = poseTuningSection
-    )
-    default int poseSequenceLength() {
-        return 12;
-    }
 
     @ConfigItem(
             keyName = "poseAnimationIdsV132",
             name = "Player animation IDs",
-            description = "Comma-separated animation IDs for the selected trick. A single ID repeats for the whole pose sequence",
-            hidden = true,
-            position = 2,
+            description = "Comma-separated animation IDs for the selected trick. A single ID repeats for every player frame",
+            hidden = !SkateScapeDeveloperMode.ENABLED,
+            position = 1,
             section = poseTuningSection
     )
     default String poseAnimationIds() {
@@ -538,9 +526,9 @@ public interface SkateScapeConfig extends Config {
     @ConfigItem(
             keyName = "poseFramesV132",
             name = "Player frames",
-            description = "Comma-separated animation frames for the selected trick",
-            hidden = true,
-            position = 3,
+            description = "Comma-separated animation frames for the selected trick. The number of frame entries automatically defines the pose sequence length, up to 30 poses",
+            hidden = !SkateScapeDeveloperMode.ENABLED,
+            position = 2,
             section = poseTuningSection
     )
     default String poseFrames() {
@@ -548,7 +536,7 @@ public interface SkateScapeConfig extends Config {
     }
 
     // ---------------------------------------------------------------------
-    // Advanced Pose Timing editor.
+    // Advanced Frame Timing editor.
     // ---------------------------------------------------------------------
 
     @ConfigItem(
@@ -565,9 +553,9 @@ public interface SkateScapeConfig extends Config {
 
     @ConfigItem(
             keyName = "advancedPoseTimingV132",
-            name = "Advanced pose timing",
-            description = "Off = automatically fit the player pose sequence to Trick duration. On = use the per-pose percentage distribution below",
-            hidden = true,
+            name = "Advanced frame timing",
+            description = "Off = automatically fit the player frame sequence to Trick duration. On = use the literal per-frame millisecond timings below",
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 1,
             section = poseTimingSection
     )
@@ -577,13 +565,13 @@ public interface SkateScapeConfig extends Config {
 
     @ConfigItem(
             keyName = "poseDurationsMsV132",
-            name = "Pose timing (%)",
-            description = "Comma-separated percentage distribution across the active poses. Values are normalized to Trick duration; a single value repeats across the sequence",
-            hidden = true,
+            name = "Frame timing (ms)",
+            description = "Comma-separated literal milliseconds, one value per active frame. A warning is shown if the entered total exceeds Trick duration.",
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 2,
             section = poseTimingSection
     )
-    default String poseTimingPercentages() {
+    default String poseTimingMs() {
         return "";
     }
 
@@ -591,7 +579,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "animationTest",
             name = "Enable animation inspector",
             description = "Temporarily replace normal SkateScape animation handling with the animation inspector",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 0,
             section = animationTestingSection
     )
@@ -603,7 +591,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "freezeFrame",
             name = "Freeze frame",
             description = "When enabled, inspect a specific pose-frame. When disabled, play the selected animation normally as an action animation",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 1,
             section = animationTestingSection
     )
@@ -615,8 +603,8 @@ public interface SkateScapeConfig extends Config {
     @ConfigItem(
             keyName = "animationId",
             name = "Animation ID",
-            description = "Animation to inspect. Up/Down arrows browse valid animation IDs while the game canvas has focus",
-            hidden = true,
+            description = "Animation to inspect. Supported range: 0–14520. Up/Down arrows browse valid animations while the game canvas has focus.",
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 2,
             section = animationTestingSection
     )
@@ -629,7 +617,7 @@ public interface SkateScapeConfig extends Config {
             keyName = "animationFrame",
             name = "Animation frame",
             description = "Frame to inspect. Left/Right arrows browse frames while the game canvas has focus",
-            hidden = true,
+            hidden = !SkateScapeDeveloperMode.ENABLED,
             position = 3,
             section = animationTestingSection
     )

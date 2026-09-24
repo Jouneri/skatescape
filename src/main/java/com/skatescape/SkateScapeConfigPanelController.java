@@ -1,6 +1,7 @@
 package com.skatescape;
 
 import java.awt.AWTEvent;
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -15,6 +16,7 @@ import java.awt.event.KeyEvent;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
@@ -57,12 +59,81 @@ final class SkateScapeConfigPanelController {
     }
 
     void uninstallListeners() {
+        /*
+         * Restore an already-open RuneLite ConfigPanel before this controller
+         * disappears. Otherwise OFF -> change Trick -> ON can leave stale
+         * removed/relabelled Swing rows behind for the new controller.
+         */
+        restoreOpenRuneLiteConfigPanel();
+
         KeyboardFocusManager
                 .getCurrentKeyboardFocusManager()
                 .removeKeyEventDispatcher(configSpinnerArrowGuard);
 
         Toolkit.getDefaultToolkit()
                 .removeAWTEventListener(configPanelVisibilityListener);
+    }
+
+    private void restoreOpenRuneLiteConfigPanel() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            try {
+                SwingUtilities.invokeAndWait(
+                        this::restoreOpenRuneLiteConfigPanel
+                );
+            } catch (Exception ex) {
+                log.debug(
+                        "Could not restore SkateScape config panel on shutdown",
+                        ex
+                );
+            }
+            return;
+        }
+
+        try {
+            for (Window window : Window.getWindows()) {
+                if (restoreVisibleConfigPanelInTree(window)) {
+                    break;
+                }
+            }
+        } catch (Exception ex) {
+            log.debug(
+                    "Could not restore SkateScape config panel on shutdown",
+                    ex
+            );
+        }
+    }
+
+    private boolean restoreVisibleConfigPanelInTree(Component component) {
+        if (component == null) {
+            return false;
+        }
+
+        if ("net.runelite.client.plugins.config.ConfigPanel"
+                .equals(component.getClass().getName())
+                && component.isShowing()
+                && isSkateScapeConfigPanel(component)) {
+
+            applyingLiveConfigPanel = true;
+            try {
+                restoreCachedTuningRows(component);
+                resetPoseTimingWarningPresentation(component);
+                component.revalidate();
+                component.repaint();
+            } finally {
+                applyingLiveConfigPanel = false;
+            }
+            return true;
+        }
+
+        if (component instanceof Container) {
+            for (Component child : ((Container) component).getComponents()) {
+                if (restoreVisibleConfigPanelInTree(child)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     void suppressPerTrickEditorWrites() {
@@ -91,6 +162,7 @@ final class SkateScapeConfigPanelController {
     private Component liveConfigPanel;
     private Component liveConfigSentinelRow;
     private Container liveTuningSection;
+    private Component liveChristAirRecommendationRow;
 
     private Component livePopHeightRow;
     private Component livePopStartRow;
@@ -201,9 +273,6 @@ final class SkateScapeConfigPanelController {
      * the plugin-list/sidebar start scrolling. Consume only those boundary
      * presses, and only while a SkateScape config spinner owns focus.
      *
-     * Pose sequence length has a per-trick maximum: 12 for Tricks 1-3,
-     * 19 for Trick 4 and 9 for Trick 5. The stock @Range stays broad enough
-     * for every slot; this guard supplies the selected trick's actual max.
      */
     private final KeyEventDispatcher configSpinnerArrowGuard =
             event -> {
@@ -294,12 +363,7 @@ final class SkateScapeConfigPanelController {
                     return true;
                 }
 
-                if ("Pose sequence length".equals(label)) {
-                    maximum =
-                            plugin.maxPoseSequenceLength(
-                                    config.poseSelectedTrick().getSlot()
-                            );
-                } else if ("Trick position (cycle)".equals(label)) {
+                if ("Trick position (cycle)".equals(label)) {
                     maximum = getLiveInspectorMaxCycle();
                 } else if ("Animation frame".equals(label)
                         && config.animationTest()
@@ -487,9 +551,18 @@ final class SkateScapeConfigPanelController {
 
         final Container tuningSection = durationRow.getParent();
 
+        if (liveChristAirRecommendationRow != null
+                && liveChristAirRecommendationRow.getParent() != null) {
+            liveChristAirRecommendationRow
+                    .getParent()
+                    .remove(liveChristAirRecommendationRow);
+        }
+
         liveConfigPanel = configPanel;
         liveConfigSentinelRow = durationRow;
         liveTuningSection = tuningSection;
+        liveChristAirRecommendationRow =
+                createChristAirRecommendationRow();
 
         livePopHeightRow =
                 getConfigRow(configPanel, "Board pop height");
@@ -600,6 +673,74 @@ final class SkateScapeConfigPanelController {
                 getComponentIndex(tuningSection, liveTrick5BoardRollRow);
     }
 
+    private Component createChristAirRecommendationRow() {
+        final JPanel row =
+                new JPanel(new BorderLayout());
+
+        row.setOpaque(false);
+
+        final JLabel label =
+                new JLabel(
+                        "<html>Modifying Christ Air requires the use of Trick Inspector.</html>"
+                );
+
+        row.add(label, BorderLayout.CENTER);
+        return row;
+    }
+
+    private void removeChristAirRecommendationRow() {
+        if (liveChristAirRecommendationRow == null) {
+            return;
+        }
+
+        final Container parent =
+                liveChristAirRecommendationRow.getParent();
+
+        if (parent != null) {
+            parent.remove(liveChristAirRecommendationRow);
+        }
+    }
+
+    private void showChristAirRecommendationRow(
+            Component configPanel) {
+
+        if (liveTuningSection == null
+                || liveChristAirRecommendationRow == null
+                || liveChristAirRecommendationRow.getParent() != null) {
+            return;
+        }
+
+        final Component durationRow =
+                getConfigRow(
+                        configPanel,
+                        "Trick duration (ms)"
+                );
+
+        if (durationRow == null
+                || durationRow.getParent() != liveTuningSection) {
+            return;
+        }
+
+        /*
+         * Insert immediately before Trick duration, which places this message
+         * directly after the shared Trick dropdown.
+         */
+        final int durationIndex =
+                getComponentIndex(
+                        liveTuningSection,
+                        durationRow
+                );
+
+        if (durationIndex < 0) {
+            return;
+        }
+
+        liveTuningSection.add(
+                liveChristAirRecommendationRow,
+                durationIndex
+        );
+    }
+
     private void detachCachedConfigRow(Component row) {
         if (row == null) {
             return;
@@ -648,6 +789,8 @@ final class SkateScapeConfigPanelController {
         if (liveTuningSection == null) {
             return;
         }
+
+        removeChristAirRecommendationRow();
 
         /*
          * The live-row cache includes Christ Air's dedicated frame-by-frame
@@ -975,21 +1118,6 @@ final class SkateScapeConfigPanelController {
                 "Trick Tuning",
                 config.tuningSelectedTrick()
         );
-        setSectionComboValue(
-                configPanel,
-                "Trick Inspector",
-                config.inspectorSelectedTrick()
-        );
-        setSectionComboValue(
-                configPanel,
-                "Pose Tuning",
-                config.poseSelectedTrick()
-        );
-        setSectionComboValue(
-                configPanel,
-                "Advanced Pose Timing",
-                config.poseTimingSelectedTrick()
-        );
 
         setSpinnerValue(
                 findLabeledSpinner(
@@ -1167,13 +1295,6 @@ final class SkateScapeConfigPanelController {
                 config.trickInspectorEnabled()
         );
 
-        setSpinnerValue(
-                findLabeledSpinner(
-                        configPanel,
-                        "Pose sequence length"
-                ),
-                config.poseSequenceLength()
-        );
         setTextValue(
                 getConfigRow(
                         configPanel,
@@ -1192,17 +1313,20 @@ final class SkateScapeConfigPanelController {
         setCheckBoxValue(
                 getConfigRow(
                         configPanel,
-                        "Advanced pose timing"
+                        "Advanced frame timing"
                 ),
                 config.advancedPoseTiming()
         );
         setTextValue(
                 getConfigRow(
                         configPanel,
-                        "Pose timing (%)"
+                        "Frame timing (ms)",
+                        "Frame timing (ms) ⚠"
                 ),
-                config.poseTimingPercentages()
+                config.poseTimingMs()
         );
+
+        applyPoseTimingWarning(configPanel);
 
         setCheckBoxValue(
                 getConfigRow(
@@ -1314,6 +1438,80 @@ final class SkateScapeConfigPanelController {
      * remove the complete RuneLite item row. Cache removed rows so they can be
      * restored on the next live refresh without rebuilding ConfigPanel.
      */
+    private void applyPoseTimingWarning(Component configPanel) {
+        final JLabel label =
+                findLabel(
+                        configPanel,
+                        "Frame timing (ms)",
+                        "Frame timing (ms) ⚠"
+                );
+
+        if (label == null) {
+            return;
+        }
+
+        final String warning =
+                plugin.getPoseTimingWarning(
+                        config.tuningSelectedTrick().getSlot()
+                );
+
+        if (warning == null || warning.isEmpty()) {
+            resetPoseTimingWarningPresentation(configPanel);
+            return;
+        }
+
+        label.setText("Frame timing (ms) ⚠");
+        label.setToolTipText(warning);
+
+        final Container row = label.getParent();
+        if (row != null) {
+            final JTextComponent textComponent =
+                    findChildComponent(
+                            row,
+                            JTextComponent.class
+                    );
+
+            if (textComponent != null) {
+                textComponent.setToolTipText(warning);
+            }
+        }
+    }
+
+    private void resetPoseTimingWarningPresentation(
+            Component configPanel) {
+
+        final JLabel label =
+                findLabel(
+                        configPanel,
+                        "Frame timing (ms)",
+                        "Frame timing (ms) ⚠"
+                );
+
+        if (label == null) {
+            return;
+        }
+
+        final String normalTooltip =
+                "Comma-separated literal milliseconds, one value per active frame. "
+                        + "A warning is shown if the entered total exceeds Trick duration.";
+
+        label.setText("Frame timing (ms)");
+        label.setToolTipText(normalTooltip);
+
+        final Container row = label.getParent();
+        if (row != null) {
+            final JTextComponent textComponent =
+                    findChildComponent(
+                            row,
+                            JTextComponent.class
+                    );
+
+            if (textComponent != null) {
+                textComponent.setToolTipText(normalTooltip);
+            }
+        }
+    }
+
     private void configureRotationDegreesSpinner(
             JLabel label,
             JSpinner spinner,
@@ -1565,29 +1763,6 @@ final class SkateScapeConfigPanelController {
         }
 
         /*
-         * Pose sequence length has a real per-trick UI maximum.
-         */
-        final JSpinner poseLengthSpinner =
-                findLabeledSpinner(
-                        configPanel,
-                        "Pose sequence length"
-                );
-
-        if (poseLengthSpinner != null
-                && poseLengthSpinner.getModel()
-                        instanceof SpinnerNumberModel) {
-
-            final SpinnerNumberModel poseLengthModel =
-                    (SpinnerNumberModel) poseLengthSpinner.getModel();
-
-            poseLengthModel.setMaximum(
-                    plugin.maxPoseSequenceLength(
-                            config.poseSelectedTrick().getSlot()
-                    )
-            );
-        }
-
-        /*
          * Trick Tuning presentation. Trick order is:
          *   1 Kickflip
          *   2 360 Shove-it
@@ -1604,10 +1779,13 @@ final class SkateScapeConfigPanelController {
         /*
          * Christ Air uses frame-by-frame skateboard authoring. Generic
          * pop/flip/shove/catch controls do not drive that board choreography,
-         * so they are removed from the live editor. The board-frame controls,
-         * including the per-frame lock, appear only for Christ Air.
+         * so they are removed from the live editor. Trick Inspector chooses
+         * the active board keyframe automatically; the transform/lock controls
+         * appear only for Christ Air.
          */
         if (tuningSlot == 5) {
+            showChristAirRecommendationRow(configPanel);
+
             removeCachedConfigRow(livePopHeightRow);
             removeCachedConfigRow(livePopStartRow);
             removeCachedConfigRow(livePrimaryStartRow);

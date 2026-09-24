@@ -105,8 +105,8 @@ final class Trick5BoardChoreographyController {
          */
         if ("trickInspectorCycleV132".equals(key)
                 && !syncingInspector
-                && config.inspectorSelectedTrick() != null
-                && config.inspectorSelectedTrick().getSlot() == 5) {
+                && config.tuningSelectedTrick() != null
+                && config.tuningSelectedTrick().getSlot() == 5) {
 
             syncBoardFrameFromInspectorCycle();
             return;
@@ -234,8 +234,8 @@ final class Trick5BoardChoreographyController {
 
         syncingInspector = true;
         try {
-            if (config.inspectorSelectedTrick() == null
-                    || config.inspectorSelectedTrick().getSlot() != 5) {
+            if (config.tuningSelectedTrick() == null
+                    || config.tuningSelectedTrick().getSlot() != 5) {
                 configManager.setConfiguration(
                         GROUP,
                         "inspectorSelectedTrickV132",

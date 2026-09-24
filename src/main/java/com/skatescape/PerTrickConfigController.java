@@ -29,6 +29,8 @@ final class PerTrickConfigController {
 
     void initializeStorage() {
         initializeCurrentPerTrickStorage();
+        initializePoseTimingMilliseconds();
+        mirrorSharedTrickSelectionFromTuning();
         syncAllEditorsFromSelection();
     }
 
@@ -42,6 +44,7 @@ final class PerTrickConfigController {
      * performed, regardless of which editor is currently open.
      */
     private boolean syncingPerTrickEditor;
+    private boolean syncingSharedTrickSelection;
 
     private String perTrickKey(
             int slot,
@@ -641,6 +644,149 @@ final class PerTrickConfigController {
         return cycleWeightsToPercentList(oldActualCycles);
     }
 
+    /*
+     * Advanced Pose Timing uses a separate millisecond backing key so older
+     * percentage values can never be mistaken for literal milliseconds.
+     */
+    private String poseTimingMsKey(int slot) {
+        return perTrickKey(
+                slot,
+                "timing",
+                "durationsMsV216"
+        );
+    }
+
+    private String defaultPoseTimingMs(int slot) {
+        final int safeSlot = clampInt(slot, 1, 5);
+
+        if (safeSlot == 4) {
+            return "60,60,60,60,100,100,100,100,100,100,100,60,60,60,60,60,60,60,60";
+        }
+
+        if (safeSlot == 5) {
+            return "160,160,140,140,260,140,140,140,140";
+        }
+
+        return "";
+    }
+
+    private void initializePoseTimingMilliseconds() {
+        for (int slot = 1; slot <= 5; slot++) {
+            final String key = poseTimingMsKey(slot);
+
+            if (configManager.getConfiguration("skatescape", key) == null) {
+                configManager.setConfiguration(
+                        "skatescape",
+                        key,
+                        defaultPoseTimingMs(slot)
+                );
+            }
+        }
+    }
+
+    private String getPoseTimingMsRaw(int slot) {
+        final String value =
+                configManager.getConfiguration(
+                        "skatescape",
+                        poseTimingMsKey(slot)
+                );
+
+        return value == null
+                ? defaultPoseTimingMs(slot)
+                : value.trim();
+    }
+
+    private static String formatPoseTimingMs(String configured) {
+        if (configured == null) {
+            return "";
+        }
+
+        final String trimmed = configured.trim();
+        if (trimmed.isEmpty()) {
+            return "";
+        }
+
+        final String[] pieces = trimmed.split(",");
+        final StringBuilder builder = new StringBuilder();
+
+        try {
+            for (int i = 0; i < pieces.length; i++) {
+                final int value = Integer.parseInt(pieces[i].trim());
+
+                if (value <= 0 || value > 20000) {
+                    return trimmed;
+                }
+
+                if (i > 0) {
+                    builder.append(',');
+                }
+                builder.append(value);
+            }
+        } catch (NumberFormatException ignored) {
+            return trimmed;
+        }
+
+        return builder.toString();
+    }
+
+    private static int[] parsePoseTimingMs(String configured) {
+        if (configured == null || configured.trim().isEmpty()) {
+            return null;
+        }
+
+        final String[] pieces = configured.split(",");
+        final int[] values = new int[pieces.length];
+
+        try {
+            for (int i = 0; i < pieces.length; i++) {
+                final int value = Integer.parseInt(pieces[i].trim());
+
+                if (value <= 0 || value > 20000) {
+                    return null;
+                }
+
+                values[i] = value;
+            }
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+
+        return values;
+    }
+
+    String getPoseTimingMs(int slot) {
+        return formatPoseTimingMs(getPoseTimingMsRaw(slot));
+    }
+
+    String getPoseTimingWarning(int slot) {
+        final int safeSlot = clampInt(slot, 1, 5);
+
+        if (!getAdvancedPoseTiming(safeSlot)) {
+            return "";
+        }
+
+        final int[] values = parsePoseTimingMs(getPoseTimingMs(safeSlot));
+        if (values == null || values.length == 0) {
+            return "";
+        }
+
+        long totalMs = 0L;
+        for (int value : values) {
+            totalMs += value;
+        }
+
+        final int trickDurationMs = getTuningInt(safeSlot, "durationMs");
+        if (totalMs > trickDurationMs) {
+            return "Frame timing totals "
+                    + totalMs
+                    + " ms - Trick duration is "
+                    + trickDurationMs
+                    + " ms.";
+        }
+
+        return "";
+    }
+
     private static double cycleToPercent(
             int cycle,
             int totalCycles) {
@@ -990,17 +1136,8 @@ final class PerTrickConfigController {
     }
 
     int maxPoseSequenceLength(int slot) {
-        final int safeSlot = clampInt(slot, 1, 5);
-
-        if (safeSlot == 4) {
-            return 19;
-        }
-
-        if (safeSlot == 5) {
-            return 9;
-        }
-
-        return 12;
+        clampInt(slot, 1, 5);
+        return 30;
     }
 
     private boolean defaultAdvancedPoseTiming(int slot) {
@@ -1179,10 +1316,6 @@ final class PerTrickConfigController {
                 );
             }
 
-            ensureConfigValue(
-                    perTrickKey(slot, "pose", "length"),
-                    defaultPoseLength(slot)
-            );
             ensureConfigValue(
                     perTrickKey(slot, "pose", "animations"),
                     defaultPoseAnimationIds(slot)
@@ -1380,13 +1513,9 @@ final class PerTrickConfigController {
         }
 
         final int poseSlot =
-                config.poseSelectedTrick().getSlot();
+                config.tuningSelectedTrick().getSlot();
 
         switch (key) {
-            case "poseSequenceLengthV132":
-                setPerTrickConfig(poseSlot, "pose", "length", defaultPoseLength(poseSlot));
-                syncPoseEditorFromSelection();
-                return true;
             case "poseAnimationIdsV132":
                 setPerTrickConfig(poseSlot, "pose", "animations", defaultPoseAnimationIds(poseSlot));
                 syncPoseEditorFromSelection();
@@ -1400,7 +1529,7 @@ final class PerTrickConfigController {
         }
 
         final int timingSlot =
-                config.poseTimingSelectedTrick().getSlot();
+                config.tuningSelectedTrick().getSlot();
 
         switch (key) {
             case "advancedPoseTimingV132":
@@ -1408,7 +1537,7 @@ final class PerTrickConfigController {
                 syncPoseTimingEditorFromSelection();
                 return true;
             case "poseDurationsMsV132":
-                setPerTrickConfig(timingSlot, "timing", "durations", defaultPoseTimingPercentages(timingSlot));
+                configManager.setConfiguration("skatescape", poseTimingMsKey(timingSlot), defaultPoseTimingMs(timingSlot));
                 syncPoseTimingEditorFromSelection();
                 return true;
             default:
@@ -1417,7 +1546,7 @@ final class PerTrickConfigController {
 
         if ("trickInspectorCycleV132".equals(key)) {
             final int inspectorSlot =
-                    config.inspectorSelectedTrick().getSlot();
+                    config.tuningSelectedTrick().getSlot();
 
             setPerTrickConfig(inspectorSlot, "inspect", "cycle", 0);
             syncInspectorEditorFromSelection();
@@ -1564,9 +1693,31 @@ final class PerTrickConfigController {
     }
 
     int getPoseLength(int slot) {
-        return getConfigInt(
-                perTrickKey(slot, "pose", "length"),
-                defaultPoseLength(slot)
+        final int safeSlot = clampInt(slot, 1, 5);
+        final String configured = getPoseFrames(safeSlot);
+
+        if (configured == null || configured.trim().isEmpty()) {
+            return defaultPoseLength(safeSlot);
+        }
+
+        final String[] pieces = configured.split(",");
+
+        try {
+            for (String piece : pieces) {
+                final int frame = Integer.parseInt(piece.trim());
+
+                if (frame < 0 || frame > 200) {
+                    return defaultPoseLength(safeSlot);
+                }
+            }
+        } catch (NumberFormatException ignored) {
+            return defaultPoseLength(safeSlot);
+        }
+
+        return clampInt(
+                pieces.length,
+                1,
+                maxPoseSequenceLength(safeSlot)
         );
     }
 
@@ -1618,6 +1769,51 @@ final class PerTrickConfigController {
                 perTrickKey(slot, family, field),
                 value
         );
+    }
+
+    private void mirrorSharedTrickSelectionFromTuning() {
+        if (syncingSharedTrickSelection) {
+            return;
+        }
+
+        final String selectionName = config.tuningSelectedTrick().name();
+
+        syncingSharedTrickSelection = true;
+        try {
+            mirrorSharedTrickSelectionKey(
+                    "inspectorSelectedTrickV132",
+                    selectionName
+            );
+            mirrorSharedTrickSelectionKey(
+                    "poseSelectedTrickV132",
+                    selectionName
+            );
+            mirrorSharedTrickSelectionKey(
+                    "poseTimingSelectedTrickV132",
+                    selectionName
+            );
+        } finally {
+            syncingSharedTrickSelection = false;
+        }
+    }
+
+    private void mirrorSharedTrickSelectionKey(
+            String key,
+            String selectionName) {
+
+        final String current =
+                configManager.getConfiguration(
+                        "skatescape",
+                        key
+                );
+
+        if (!selectionName.equals(current)) {
+            configManager.setConfiguration(
+                    "skatescape",
+                    key,
+                    selectionName
+            );
+        }
     }
 
     private void syncTuningEditorFromSelection() {
@@ -1687,22 +1883,10 @@ final class PerTrickConfigController {
 
     private void syncPoseEditorFromSelection() {
         final int slot =
-                config.poseSelectedTrick().getSlot();
-
-        final int safeLength =
-                clampInt(
-                        getPoseLength(slot),
-                        1,
-                        maxPoseSequenceLength(slot)
-                );
-
-        if (safeLength != getPoseLength(slot)) {
-            setPerTrickConfig(slot, "pose", "length", safeLength);
-        }
+                config.tuningSelectedTrick().getSlot();
 
         syncingPerTrickEditor = true;
         try {
-            configManager.setConfiguration("skatescape", "poseSequenceLengthV132", safeLength);
             configManager.setConfiguration("skatescape", "poseAnimationIdsV132", getPoseAnimations(slot));
             configManager.setConfiguration("skatescape", "poseFramesV132", getPoseFrames(slot));
         } finally {
@@ -1712,12 +1896,12 @@ final class PerTrickConfigController {
 
     private void syncPoseTimingEditorFromSelection() {
         final int slot =
-                config.poseTimingSelectedTrick().getSlot();
+                config.tuningSelectedTrick().getSlot();
 
         syncingPerTrickEditor = true;
         try {
             configManager.setConfiguration("skatescape", "advancedPoseTimingV132", getAdvancedPoseTiming(slot));
-            configManager.setConfiguration("skatescape", "poseDurationsMsV132", getPoseTimingPercentages(slot));
+            configManager.setConfiguration("skatescape", "poseDurationsMsV132", getPoseTimingMs(slot));
         } finally {
             syncingPerTrickEditor = false;
         }
@@ -1725,7 +1909,7 @@ final class PerTrickConfigController {
 
     void syncInspectorEditorFromSelection() {
         final int slot =
-                config.inspectorSelectedTrick().getSlot();
+                config.tuningSelectedTrick().getSlot();
 
         syncingPerTrickEditor = true;
         try {
@@ -1802,33 +1986,19 @@ final class PerTrickConfigController {
 
         if ("tuningSelectedTrickV132".equals(key)) {
             host.suppressPerTrickEditorWrites();
-            syncTuningEditorFromSelection();
-            host.refreshOpenRuneLiteConfigPanel();
-            return;
-        }
-
-        if ("poseSelectedTrickV132".equals(key)) {
-            host.suppressPerTrickEditorWrites();
-            syncPoseEditorFromSelection();
-            host.refreshOpenRuneLiteConfigPanel();
-            return;
-        }
-
-        if ("poseTimingSelectedTrickV132".equals(key)) {
-            host.suppressPerTrickEditorWrites();
-            sanitizeUnusedPoseDurations(
-                    config.poseTimingSelectedTrick().getSlot()
-            );
-            syncPoseTimingEditorFromSelection();
-            host.refreshOpenRuneLiteConfigPanel();
-            return;
-        }
-
-        if ("inspectorSelectedTrickV132".equals(key)) {
-            host.suppressPerTrickEditorWrites();
-            syncInspectorEditorFromSelection();
+            mirrorSharedTrickSelectionFromTuning();
+            syncAllEditorsFromSelection();
             host.invalidateTrickInspectorTuningSignature();
             host.refreshOpenRuneLiteConfigPanel();
+            return;
+        }
+
+        if ("poseSelectedTrickV132".equals(key)
+                || "poseTimingSelectedTrickV132".equals(key)
+                || "inspectorSelectedTrickV132".equals(key)) {
+
+            /* Legacy selector keys stay mirrored to Trick Tuning. */
+            mirrorSharedTrickSelectionFromTuning();
             return;
         }
 
@@ -2025,36 +2195,22 @@ final class PerTrickConfigController {
         }
 
         final int poseSlot =
-                config.poseSelectedTrick().getSlot();
+                config.tuningSelectedTrick().getSlot();
 
         switch (key) {
-            case "poseSequenceLengthV132":
-                final int safePoseLength =
-                        clampInt(
-                                config.poseSequenceLength(),
-                                1,
-                                maxPoseSequenceLength(poseSlot)
-                        );
-
-                setPerTrickConfig(poseSlot, "pose", "length", safePoseLength);
-
-                if (safePoseLength != config.poseSequenceLength()) {
-                    syncPoseEditorFromSelection();
-                    host.refreshOpenRuneLiteConfigPanel();
-                }
-                return;
             case "poseAnimationIdsV132":
                 setPerTrickConfig(poseSlot, "pose", "animations", config.poseAnimationIds());
                 return;
             case "poseFramesV132":
                 setPerTrickConfig(poseSlot, "pose", "frames", config.poseFrames());
+                host.refreshOpenRuneLiteConfigPanel();
                 return;
             default:
                 break;
         }
 
         final int timingSlot =
-                config.poseTimingSelectedTrick().getSlot();
+                config.tuningSelectedTrick().getSlot();
 
         switch (key) {
             case "advancedPoseTimingV132":
@@ -2064,17 +2220,18 @@ final class PerTrickConfigController {
                         "advanced",
                         config.advancedPoseTiming()
                 );
+                host.refreshOpenRuneLiteConfigPanel();
                 return;
 
             case "poseDurationsMsV132":
-                setPerTrickConfig(
-                        timingSlot,
-                        "timing",
-                        "durations",
-                        formatPosePercentageList(
-                                config.poseTimingPercentages()
+                configManager.setConfiguration(
+                        "skatescape",
+                        poseTimingMsKey(timingSlot),
+                        formatPoseTimingMs(
+                                config.poseTimingMs()
                         )
                 );
+                host.refreshOpenRuneLiteConfigPanel();
                 return;
 
             default:
@@ -2083,7 +2240,7 @@ final class PerTrickConfigController {
 
         if ("trickInspectorCycleV132".equals(key)) {
             final int inspectorSlot =
-                    config.inspectorSelectedTrick().getSlot();
+                    config.tuningSelectedTrick().getSlot();
 
             setPerTrickConfig(
                     inspectorSlot,
@@ -2129,12 +2286,12 @@ final class PerTrickConfigController {
         setPerTrickConfig(safeSlot, "tune", "catch", defaultTuningPercent(safeSlot, "catch"));
         setPerTrickConfig(safeSlot, "tune", "touchdown", defaultTuningPercent(safeSlot, "touchdown"));
 
-        setPerTrickConfig(safeSlot, "pose", "length", defaultPoseLength(safeSlot));
         setPerTrickConfig(safeSlot, "pose", "animations", defaultPoseAnimationIds(safeSlot));
         setPerTrickConfig(safeSlot, "pose", "frames", defaultPoseFrames(safeSlot));
 
         setPerTrickConfig(safeSlot, "timing", "advanced", defaultAdvancedPoseTiming(safeSlot));
         setPerTrickConfig(safeSlot, "timing", "durations", defaultPoseTimingPercentages(safeSlot));
+        configManager.setConfiguration("skatescape", poseTimingMsKey(safeSlot), defaultPoseTimingMs(safeSlot));
 
         storeDefaultQueuePosition(safeSlot, "exit");
         storeDefaultQueuePosition(safeSlot, "start");

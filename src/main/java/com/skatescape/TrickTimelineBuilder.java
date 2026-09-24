@@ -243,8 +243,8 @@ final class TrickTimelineBuilder {
          * ONE MASTER MAIN CLOCK.
          *
          * Main trick duration owns the whole MAIN window. The board timeline,
-         * normal player pose timing and Advanced Pose Timing are all fitted to
-         * this same target so changing duration scales the complete trick.
+         * normal player pose timing follow this target. Advanced Pose Timing
+         * may instead supply literal per-pose milliseconds.
          */
         normalizeCycleArrayToTotal(
                 host.trickActiveJumpFrameCycles,
@@ -538,6 +538,39 @@ final class TrickTimelineBuilder {
                 : parsed;
     }
 
+    private int[] parsePoseTimingMs(
+            String configured,
+            int expectedCount) {
+
+        if (configured == null
+                || configured.trim().isEmpty()
+                || expectedCount <= 0) {
+            return null;
+        }
+
+        final String[] pieces = configured.split(",");
+        if (pieces.length != expectedCount) {
+            return null;
+        }
+
+        final int[] parsed = new int[pieces.length];
+        try {
+            for (int i = 0; i < pieces.length; i++) {
+                final int value = Integer.parseInt(pieces[i].trim());
+
+                if (value <= 0 || value > 20000) {
+                    return null;
+                }
+
+                parsed[i] = value;
+            }
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+
+        return parsed;
+    }
+
     private int percentageToMainCycle(
             double percent,
             int totalCycles) {
@@ -633,18 +666,18 @@ final class TrickTimelineBuilder {
                         200
                 );
 
-        final double[] configuredPosePercentages =
-                parseConfiguredDoubleList(
-                        host.getPoseTimingPercentages(safeSlot),
-                        new double[]{
-                                1.0
-                        },
-                        0.0,
-                        100.0
+        final int[] configuredPoseTimingMs =
+                parsePoseTimingMs(
+                        host.getPoseTimingMs(safeSlot),
+                        sequenceLength
                 );
 
         final boolean advancedTiming =
                 host.getAdvancedPoseTiming(safeSlot);
+
+        final boolean literalPoseTiming =
+                advancedTiming
+                        && configuredPoseTimingMs != null;
 
         host.trickActivePlayerAnimationIds =
                 new int[sequenceLength];
@@ -715,15 +748,13 @@ final class TrickTimelineBuilder {
             host.trickActivePlayerFrames[i] =
                     frame;
 
-            if (advancedTiming) {
+            if (literalPoseTiming) {
                 host.trickActivePlayerPoseCycles[i] =
                         Math.max(
                                 1,
                                 (int) Math.round(
-                                        getRepeatedListValue(
-                                                configuredPosePercentages,
-                                                i
-                                        ) * targetCycles / 100.0
+                                        configuredPoseTimingMs[i]
+                                                / 20.0
                                 )
                         );
             } else {
@@ -746,14 +777,16 @@ final class TrickTimelineBuilder {
         }
 
         /*
-         * Advanced Pose Timing changes only the relative distribution of
-         * the player poses. It can never lengthen or shorten MAIN; both normal
-         * and advanced modes are normalized to the one master duration.
+         * Valid Advanced Pose Timing is literal milliseconds. Do not silently
+         * normalize those values back to Trick duration. Blank, invalid or
+         * incomplete lists fall back to normal fitted timing.
          */
-        normalizeCycleArrayToTotal(
-                host.trickActivePlayerPoseCycles,
-                targetCycles
-        );
+        if (!literalPoseTiming) {
+            normalizeCycleArrayToTotal(
+                    host.trickActivePlayerPoseCycles,
+                    targetCycles
+            );
+        }
     }
 
     private void normalizeCycleArrayToTotal(

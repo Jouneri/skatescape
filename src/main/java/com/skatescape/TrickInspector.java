@@ -97,7 +97,7 @@ final class TrickInspector {
                 || !plugin.isTrickActiveForInspector()
                 || plugin.getTrickTotalCyclesForInspector() <= 0
                 || plugin.getActiveTrickSlotForInspector()
-                        != config.inspectorSelectedTrick().getSlot()) {
+                        != config.tuningSelectedTrick().getSlot()) {
 
             return FALLBACK_MAX_CYCLE;
         }
@@ -121,7 +121,7 @@ final class TrickInspector {
 
     private TrickDefinition getSelectedDefinition() {
         return TrickRegistry.forEditorSlot(
-                config.inspectorSelectedTrick().getSlot()
+                config.tuningSelectedTrick().getSlot()
         );
     }
 
@@ -154,7 +154,7 @@ final class TrickInspector {
         }
 
         final int currentSlot =
-                config.inspectorSelectedTrick().getSlot();
+                config.tuningSelectedTrick().getSlot();
 
         final int trickCount =
                 LAST_TRICK_SLOT - FIRST_TRICK_SLOT + 1;
@@ -176,7 +176,7 @@ final class TrickInspector {
 
         configManager.setConfiguration(
                 "skatescape",
-                "inspectorSelectedTrickV132",
+                "tuningSelectedTrickV132",
                 nextSelection.name()
         );
 

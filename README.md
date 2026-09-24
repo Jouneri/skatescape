@@ -7,14 +7,14 @@ SkateScape is a RuneLite plugin that turns your character into a skateboarder wi
 ## Features
 
 - Custom skateboard movement across Gielinor
+- Queueable trick system for chaining combos
+- Trick hotkeys through the RuneLite settings panel
 - Five built-in tricks:
   - Kickflip
   - 360 Shove-it
   - Varial Kickflip
   - Kickflip 360 Shove-it Body Varial
   - Christ Air (Even Flow not included :D)
-- Trick hotkeys through the RuneLite settings panel
-- Queueable trick system for chaining combos
 
 ## Public plugin behavior
 
@@ -26,27 +26,28 @@ The public SkateScape release is intentionally simple:
 
 ## Developer tools
 
-SkateScape includes internal trick-tuning and inspector tooling that was used during development. These controls are intentionally hidden from the public settings UI, but they can be re-enabled in a development build if someone wants to study the system or create their own tricks.
+SkateScape keeps the original trick-authoring and inspection tools in the source tree, while the normal public build shows only **Trick Controls**.
 
-To re-enable the hidden development controls:
+To enable the developer tools in a local source build:
 
-1. Open `SkateScapeConfig.java`
-2. Set:
+1. Open `src/main/java/com/skatescape/SkateScapeDeveloperMode.java`
+
+2. Change:
    ```java
-   DEVELOPER_TOOLS_ENABLED = true;
+   static final boolean ENABLED = false;
    ```
-3. Restore the developer config sections if they are hidden/disabled in the current build
-4. Unhide the developer config items
+   to:
+   ```java
+   static final boolean ENABLED = true;
+   ```
 
-The original development sections are:
+That single switch enables both the developer settings UI and the runtime authoring/inspection machinery. Developer mode restores:
 
 - Trick Tuning
-- Pose Tuning
-- Advanced Pose Timing
-- Animation Testing
 - Trick Inspector
-
-These tools are not meant for normal public use, but the code remains available for developers who want to experiment.
+- Pose Tuning
+- Advanced Frame Timing
+- Animation Inspector
 
 ## Development client
 

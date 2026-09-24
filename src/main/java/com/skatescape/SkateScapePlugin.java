@@ -26,13 +26,6 @@ import net.runelite.client.ui.overlay.OverlayManager;
         name = "SkateScape"
 )
 public class SkateScapePlugin extends Plugin {
-    /*
-     * Public releases keep the authoring/inspection machinery compiled in but
-     * dormant. Developers can re-enable it together with the hidden config
-     * items in a local build when authoring new tricks.
-     */
-    private static final boolean DEVELOPER_TOOLS_ENABLED = false;
-
     private static final int PLANK_ITEM_ID = ItemID.WOODPLANK;
 
     /*
@@ -556,8 +549,12 @@ public class SkateScapePlugin extends Plugin {
         return perTrickConfig().getAdvancedPoseTiming(slot);
     }
 
-    String getPoseTimingPercentages(int slot) {
-        return perTrickConfig().getPoseTimingPercentages(slot);
+    String getPoseTimingMs(int slot) {
+        return perTrickConfig().getPoseTimingMs(slot);
+    }
+
+    String getPoseTimingWarning(int slot) {
+        return perTrickConfig().getPoseTimingWarning(slot);
     }
 
     private void syncInspectorEditorFromSelection() {
@@ -602,7 +599,7 @@ public class SkateScapePlugin extends Plugin {
 
     @Subscribe
     public void onConfigChanged(ConfigChanged event) {
-        if (!DEVELOPER_TOOLS_ENABLED) {
+        if (!SkateScapeDeveloperMode.ENABLED) {
             return;
         }
 
@@ -624,7 +621,7 @@ public class SkateScapePlugin extends Plugin {
         perTrickConfig()
                 .initializeStorage();
 
-        if (DEVELOPER_TOOLS_ENABLED) {
+        if (SkateScapeDeveloperMode.ENABLED) {
             configPanelController =
                     new SkateScapeConfigPanelController(
                             config,
@@ -713,7 +710,7 @@ public class SkateScapePlugin extends Plugin {
                         trickInspector,
                         animationInspector,
                         slot -> pendingTrickSlot = slot,
-                        DEVELOPER_TOOLS_ENABLED
+                        SkateScapeDeveloperMode.ENABLED
                 );
 
         /*
@@ -2055,6 +2052,10 @@ public class SkateScapePlugin extends Plugin {
 
     @Provides
     SkateScapeConfig provideConfig(ConfigManager configManager) {
+        if (SkateScapeDeveloperMode.ENABLED) {
+            return configManager.getConfig(SkateScapeDeveloperConfig.class);
+        }
+
         return configManager.getConfig(SkateScapeConfig.class);
     }
 }
