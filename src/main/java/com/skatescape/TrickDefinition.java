@@ -1,12 +1,5 @@
 package com.skatescape;
 
-/**
- * Immutable description of the generic board-motion part of a SkateScape
- * trick. Player choreography is prepared separately and may differ per trick.
- *
- * This class supplies the board rotation/pitch profile used by the shared
- * transform engine.
- */
 final class TrickDefinition {
     enum RotationProfile {
         /* Kickflip rotation curve used by Trick 1. */

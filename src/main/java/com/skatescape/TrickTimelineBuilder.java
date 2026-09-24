@@ -3,12 +3,6 @@ package com.skatescape;
 import java.util.Arrays;
 import net.runelite.api.Animation;
 
-/**
- * Builds the prepared PRE -> MAIN -> landing seam -> RETURN timeline consumed
- * by the live runtime, player choreography, skateboard transform controller
- * and Trick Inspector. Prepared values remain on {@link SkateScapePlugin};
- * this class owns timeline construction only. :D
- */
 final class TrickTimelineBuilder {
     private final SkateScapePlugin host;
 
@@ -19,10 +13,6 @@ final class TrickTimelineBuilder {
     void prepare(
             Animation animation,
             TrickDefinition definition) {
-
-        /*
-         * Shared player/anchor choreography used by the default trick path.
-         */
         host.trickActivePlayerAnimationIds = null;
         host.trickActivePlayerFrames = null;
         host.trickActivePlayerPoseCycles = null;
@@ -207,15 +197,10 @@ final class TrickTimelineBuilder {
                     );
         }
 
-        /* Keep the scaled full-animation total available for debugger inspection. */
-        final int fullAnimationCycles =
+                final int fullAnimationCycles =
                 getTotalAnimationCycles(
                         host.trickFrameLengths
                 );
-
-        /*
-         * PRE-JUMP 1708 transition.
-         */
         host.trickPreFrameCycles =
                 buildTransitionFrameCycles(
                         host.trickActivePreFrames,
@@ -243,7 +228,7 @@ final class TrickTimelineBuilder {
          * ONE MASTER MAIN CLOCK.
          *
          * Main trick duration owns the whole MAIN window. The board timeline,
-         * normal player pose timing follow this target. Advanced Pose Timing
+         * normal player pose timing follow this target. Advanced Frame Timing
          * may instead supply literal per-pose milliseconds.
          */
         normalizeCycleArrayToTotal(
@@ -777,7 +762,7 @@ final class TrickTimelineBuilder {
         }
 
         /*
-         * Valid Advanced Pose Timing is literal milliseconds. Do not silently
+         * Valid Advanced Frame Timing is literal milliseconds. Do not silently
          * normalize those values back to Trick duration. Blank, invalid or
          * incomplete lists fall back to normal fitted timing.
          */

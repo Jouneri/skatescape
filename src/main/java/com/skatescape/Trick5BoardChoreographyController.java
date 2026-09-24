@@ -3,17 +3,6 @@ package com.skatescape;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.events.ConfigChanged;
 
-/**
- * Owns Trick 5's frame-by-frame skateboard choreography editor.
- *
- * The nine board frames line up one-for-one with the nine player frames used
- * by Trick 5. Each frame stores its own XYZ and Pitch/Yaw/Roll target. Runtime
- * playback interpolates smoothly from one frame target to the next using the
- * real player-frame durations, including Advanced Pose Timing. A per-frame
- * authoring lock also acts as a runtime hold: while the player remains on a
- * locked frame, the board stays exactly on that frame's saved transform instead
- * of interpolating toward the next frame.
- */
 final class Trick5BoardChoreographyController {
     static final int FRAME_COUNT = 9;
 
@@ -64,7 +53,6 @@ final class Trick5BoardChoreographyController {
             setStored(frame, "roll", defaultValue(frame, "roll"));
             setFrameLocked(frame, defaultLocked(frame));
         }
-
 
         loadCache();
         syncEditorFromSelection();

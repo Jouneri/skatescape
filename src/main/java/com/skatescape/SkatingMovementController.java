@@ -6,11 +6,6 @@ import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.coords.LocalPoint;
 
-/**
- * Owns SkateScape's normal skating movement and idle animation state: movement
- * playback, movement tracking, idle timing, and the 1708/7..9 -> 1708/10..17
- * stop/idle handoff. Trick choreography remains outside this controller.
- */
 final class SkatingMovementController {
     private final Client client;
     private final int idleSkateAnimation;

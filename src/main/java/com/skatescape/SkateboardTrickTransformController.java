@@ -4,14 +4,7 @@ import net.runelite.api.ModelData;
 import net.runelite.api.Player;
 import net.runelite.api.coords.LocalPoint;
 
-/**
- * Applies trick-specific skateboard transforms. SkateScapePlugin owns the
- * timeline; this controller converts the current timeline state into anchor
- * movement, pop height, board rotation, pitch, catch descent, and clearance.
- *
- * Mike Hawk may bend the laws of board geometry here instead of doing it in
- * the kitchen sink. :D
- */
+// Mike Hawk may bend the laws of board geometry here. :D
 final class SkateboardTrickTransformController {
     static final class Context {
         boolean trickActive;
@@ -572,7 +565,7 @@ final class SkateboardTrickTransformController {
          *
          * Each player frame owns an XYZ + Pitch/Yaw/Roll target. Values
          * interpolate across that frame's real live duration, so board motion
-         * automatically follows Trick duration and Advanced Pose Timing.
+         * automatically follows Trick duration and Advanced Frame Timing.
          */
         if (context.trickActive
                 && context.activeTrick != null

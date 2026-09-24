@@ -8,12 +8,6 @@ import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.client.config.ConfigManager;
 
-/**
- * Animation Inspector runtime. The plugin decides when inspector mode takes
- * over from normal skating; this class owns animation/frame browsing, safe
- * cache lookups, freeze-frame playback and its temporary Animation Smoothing
- * filter.
- */
 @Slf4j
 final class AnimationInspector {
     private final Client client;

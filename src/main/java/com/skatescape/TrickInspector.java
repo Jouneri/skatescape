@@ -5,16 +5,6 @@ import net.runelite.api.Animation;
 import net.runelite.api.Player;
 import net.runelite.client.config.ConfigManager;
 
-/**
- * Trick Inspector runtime/controller.
- *
- * The inspector intentionally does NOT own a second copy of SkateScape's trick
- * engine. It owns the developer-tool lifecycle, arrow-key browsing, selected
- * trick navigation and live tuning signature, then asks SkateScapePlugin to
- * freeze the real shared PRE / MAIN / SEAM / RETURN timeline at one cycle.
- *
- * The inspector must only show states produced by the real trick engine.
- */
 final class TrickInspector {
     private static final int FIRST_TRICK_SLOT = 1;
     private static final int LAST_TRICK_SLOT = 5;
@@ -66,10 +56,6 @@ final class TrickInspector {
         }
     }
 
-    /**
-     * @return true while Trick Inspector owns this ClientTick and normal
-     *         skating/trick handling must stop for the tick.
-     */
     boolean handleClientTick(Player player) {
         if (config.trickInspectorEnabled()) {
             if (!previousEnabled) {

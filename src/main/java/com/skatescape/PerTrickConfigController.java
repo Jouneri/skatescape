@@ -5,10 +5,6 @@ import net.runelite.api.gameval.AnimationID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.events.ConfigChanged;
 
-/**
- * Owns SkateScape's hidden per-trick storage, editor synchronization,
- * canonical defaults and config-change routing.
- */
 final class PerTrickConfigController {
     private final SkateScapeConfig config;
     private final ConfigManager configManager;
@@ -176,11 +172,6 @@ final class PerTrickConfigController {
                 return 0;
         }
     }
-
-    /*
-     * One trick duration owns the MAIN window. Board landmarks and advanced
-     * pose timing are stored as percentages of that duration.
-     */
     private int defaultMainDurationMs(int slot) {
         /* Tricks 4 and 5 use a 1420 ms canonical MAIN duration. */
         if (slot == 4) {
@@ -200,11 +191,6 @@ final class PerTrickConfigController {
                 (int) Math.round(defaultMainDurationMs(slot) / 20.0)
         );
     }
-
-    /*
-     * Queue controls use exact full-timeline cycles. Exit is the splice point
-     * on the current trick; start is the entry point on the queued trick.
-     */
 
     private int currentMainCyclesForQueueDefault(int slot) {
         final int safeSlot = clampInt(slot, 1, 5);
@@ -645,7 +631,7 @@ final class PerTrickConfigController {
     }
 
     /*
-     * Advanced Pose Timing uses a separate millisecond backing key so older
+     * Advanced Frame Timing uses a separate millisecond backing key so older
      * percentage values can never be mistaken for literal milliseconds.
      */
     private String poseTimingMsKey(int slot) {
@@ -1118,12 +1104,7 @@ final class PerTrickConfigController {
         if (slot == 4) {
             return "56,56,56,56,90,90,90,90,90,90,90,56,56,56,56,56,56,56,56";
         }
-
-        /*
-         * Advanced Pose Timing is stored as percentages. This compatibility
-         * fallback remains blank for non-Trick-4 profiles; the active
-         * default lives in defaultPoseTimingPercentages().
-         */
+        // Legacy percentage fallback.
         return "";
     }
 

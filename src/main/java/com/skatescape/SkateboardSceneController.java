@@ -9,13 +9,7 @@ import net.runelite.api.RuneLiteObject;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 
-/**
- * Owns the live skateboard scene object, base model, placement, orientation,
- * and terrain sampling. Trick choreography and model transforms are handled by
- * {@link SkateboardTrickTransformController}.
- *
- * The weird skateboard tricks remain Mike Hawk's problem. :D
- */
+// The weird skateboard tricks remain Mike Hawk's problem. :D
 final class SkateboardSceneController {
     @FunctionalInterface
     interface TransformApplier {
@@ -158,10 +152,6 @@ final class SkateboardSceneController {
 
         removeBoard();
 
-        /*
-         * Model construction stays in the dedicated factory. This controller merely
-         * becomes the owner of the resulting live scene object.
-         */
         final ModelData combinedData =
                 SkateboardModelFactory.createCombinedSkateboardData(
                         client,

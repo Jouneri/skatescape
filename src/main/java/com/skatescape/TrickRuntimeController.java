@@ -4,14 +4,6 @@ import net.runelite.api.Animation;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 
-/**
- * Authoritative live trick runtime and lifecycle coordinator.
- *
- * <p>Owns the PRE -> MAIN -> LANDING SEAM -> RETURN phase machine, the
- * one-slot combo buffer, trick start/finish paths, interruption restoration
- * and reset behavior. Prepared timeline data lives on {@link SkateScapePlugin}
- * and is built by {@link TrickTimelineBuilder}. :D</p>
- */
 final class TrickRuntimeController {
     private final Client client;
     private final SkateScapePlugin host;
@@ -239,7 +231,6 @@ final class TrickRuntimeController {
                 moving
         );
     }
-
 
     /*
      * Lifecycle paths live with the phase machine so trick start, combo

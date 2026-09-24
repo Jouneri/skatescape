@@ -30,10 +30,6 @@ final class SkateScapeConfigPanelController {
     private SkateScapePlugin plugin;
     private int maxSafeAnimationId;
 
-    /*
-     * Reflection-free live RuneLite config-panel machinery for the hidden
-     * developer editors.
-     */
     private volatile boolean perTrickEditorWritesSuppressed;
 
     SkateScapeConfigPanelController(
@@ -721,10 +717,6 @@ final class SkateScapeConfigPanelController {
             return;
         }
 
-        /*
-         * Insert immediately before Trick duration, which places this message
-         * directly after the shared Trick dropdown.
-         */
         final int durationIndex =
                 getComponentIndex(
                         liveTuningSection,

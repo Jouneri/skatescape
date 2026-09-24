@@ -8,11 +8,6 @@ import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.gameval.AnimationID;
 
-/**
- * Drives player-side trick animation for PRE, MAIN, the landing seam, and
- * RETURN. SkateScapePlugin owns the timeline; Context is a read-only view of
- * the prepared state.
- */
 final class PlayerTrickAnimationController {
     private final Client client;
     private final IntFunction<Animation> safeAnimationLoader;

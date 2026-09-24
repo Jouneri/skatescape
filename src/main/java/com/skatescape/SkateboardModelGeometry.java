@@ -2,10 +2,6 @@ package com.skatescape;
 
 import net.runelite.api.ModelData;
 
-/**
- * Low-level skateboard model geometry used by the board model factory.
- * Transform math is intentionally isolated from scene/runtime ownership.
- */
 final class SkateboardModelGeometry {
     private SkateboardModelGeometry() {
     }

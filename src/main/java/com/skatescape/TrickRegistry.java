@@ -1,14 +1,5 @@
 package com.skatescape;
 
-/**
- * Central SkateScape trick list.
- *
- * Player choreography and timing are editable per trick. The five release
- * slots are Kickflip, 360 Shove-it, Varial Kickflip, Kickflip 360 Shove-it
- * Body Varial and Christ Air. Each {@link TrickDefinition} supplies the generic
- * board-motion profile used where a trick does not provide dedicated board
- * choreography.
- */
 final class TrickRegistry {
     static final TrickDefinition KICKFLIP =
             new TrickDefinition(

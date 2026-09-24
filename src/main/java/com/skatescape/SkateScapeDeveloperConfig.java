@@ -3,14 +3,6 @@ package com.skatescape;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigSection;
 
-/**
- * Full local-development descriptor for SkateScape.
- *
- * <p>The actual config items and defaults stay canonical in
- * {@link SkateScapeConfig}. This subtype only restores the developer section
- * map. SkateScapePlugin selects this descriptor when
- * {@link SkateScapeDeveloperMode#ENABLED} is true.</p>
- */
 @ConfigGroup("skatescape")
 public interface SkateScapeDeveloperConfig extends SkateScapeConfig {
     @ConfigSection(

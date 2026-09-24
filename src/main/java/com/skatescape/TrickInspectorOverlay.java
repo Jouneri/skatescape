@@ -11,10 +11,6 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
-/**
- * Small in-game Trick Inspector readout. This is intentionally a dumb renderer:
- * the plugin owns trick/inspector state and this class only reads and draws it.
- */
 final class TrickInspectorOverlay extends Overlay {
     private static final Color BACKGROUND = new Color(0, 0, 0, 170);
 

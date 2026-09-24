@@ -187,7 +187,6 @@ public class SkateScapePlugin extends Plugin {
      *   Board catch          -> end of the late rotation / catch
      */
 
-
     /*
      * Terrain-follow sampling distances in local units.
      * 128 local units = one tile.
@@ -225,47 +224,16 @@ public class SkateScapePlugin extends Plugin {
     @Inject
     private OverlayManager overlayManager;
 
-    /*
-     * Animation Inspector runtime is isolated in its own subsystem.
-     * The plugin owns the mode handoff because entering/leaving the inspector
-     * changes normal skating/player state.
-     */
     private AnimationInspector animationInspector;
 
-    /*
-     * Trick Inspector lifecycle, browsing and inspector-only state live in
-     * their own controller. The shared trick timeline remains the single
-     * source of truth for what the inspector freezes.
-     */
     private TrickInspector trickInspector;
 
-    /*
-     * RuneLite config-panel live refresh, row choreography and spinner
-     * guards live together in one controller.
-     */
     private SkateScapeConfigPanelController configPanelController;
 
-    /*
-     * Normal skating movement and idle animation state live in one controller.
-     * Shared prepared trick state remains here, while TrickRuntimeController
-     * owns the live phase lifecycle and PlayerTrickAnimationController owns
-     * player-side playback.
-     */
     private SkatingMovementController skatingMovementController;
 
-    /*
-     * Live skateboard scene-object ownership, placement and terrain sampling
-     * stay together in the scene controller instead of leaking scene state
-     * throughout the trick engine.
-     */
     private SkateboardSceneController skateboardSceneController;
 
-    /*
-     * Trick-specific skateboard anchor movement, pop/landing height,
-     * rotation/pitch choreography and ground-clearance math live in one
-     * dedicated transform controller. Timeline construction lives in
-     * TrickTimelineBuilder while prepared runtime values stay shared here.
-     */
     private SkateboardTrickTransformController skateboardTrickTransformController;
     private final SkateboardTrickTransformController.Context
             skateboardTrickTransformContext =
@@ -310,37 +278,17 @@ public class SkateScapePlugin extends Plugin {
     int[] trickActiveJumpFrames;
     int[] trickActiveJumpFrameCycles;
 
-    /*
-     * Per-trick player choreography.
-     *
-     * Each trick owns its own editable pose sequence. The developer editor
-     * switches between those saved per-trick values while runtime playback
-     * reads the values belonging to the active trick.
-     */
     int[] trickActivePlayerAnimationIds;
     int[] trickActivePlayerFrames;
     int[] trickActivePlayerPoseCycles;
 
-    /*
-     * PRE / MAIN / landing-seam / RETURN player playback state lives in
-     * PlayerTrickAnimationController. The arrays above remain the prepared
-     * timeline shared with board timing and Inspector.
-     */
     private PlayerTrickAnimationController playerTrickAnimationController;
     private final PlayerTrickAnimationController.Context
             playerTrickAnimationContext =
                     new PlayerTrickAnimationController.Context();
 
-    /*
-     * TrickRuntimeController owns the live phase/combo lifecycle. Prepared
-     * timeline data remains shared here for rendering and developer tools.
-     */
     private TrickRuntimeController trickRuntimeController;
 
-    /*
-     * TrickTimelineBuilder constructs the shared prepared timeline used by the
-     * runtime, player animation, skateboard, and inspector code.
-     */
     private TrickTimelineBuilder trickTimelineBuilder;
 
     int trickPostSeamCycles;
@@ -362,10 +310,8 @@ public class SkateScapePlugin extends Plugin {
 
     private boolean previousAnimationTestState;
 
-    /* Trick Inspector rendering exists only in local developer builds. */
     private TrickInspectorOverlay trickInspectorOverlay;
 
-    /* Package-private read-only bridge for TrickInspectorOverlay. */
     Client getClientForTrickInspectorOverlay() {
         return client;
     }
@@ -390,27 +336,10 @@ public class SkateScapePlugin extends Plugin {
         return getTrickTracePhase();
     }
 
-    /*
-     * INPUT EXTRACTION.
-     *
-     * RuneLite key registration, developer inspector arrow browsing and the
-     * five trick hotkeys now live in SkateScapeInputController. The one-slot
-     * combo buffer itself deliberately remains authoritative in
-     * TrickRuntimeController via pendingTrickSlot.
-     */
     private SkateScapeInputController inputController;
 
-    /*
-     * Hidden per-trick backing values, editor synchronization, defaults and
-     * ConfigChanged routing live in PerTrickConfigController.
-     */
     private PerTrickConfigController perTrickConfigController;
 
-    /*
-     * Trick 5's skateboard is authored one player frame at a time.
-     * Runtime playback interpolates smoothly between the nine authored frame
-     * transforms using the live player-frame timing.
-     */
     private Trick5BoardChoreographyController trick5BoardChoreographyController;
 
     private Trick5BoardChoreographyController trick5BoardChoreography() {
@@ -561,7 +490,6 @@ public class SkateScapePlugin extends Plugin {
         perTrickConfig().syncInspectorEditorFromSelection();
     }
 
-    /* RuneLite config-panel operations are delegated to their controller. */
     void refreshOpenRuneLiteConfigPanel() {
         if (configPanelController != null) {
             configPanelController.refreshOpenRuneLiteConfigPanel();
@@ -713,10 +641,6 @@ public class SkateScapePlugin extends Plugin {
                         SkateScapeDeveloperMode.ENABLED
                 );
 
-        /*
-         * Own a fresh scene controller for each enable cycle. Its RuneLiteObject
-         * is explicitly deactivated and released during shutdown.
-         */
         skateboardSceneController =
                 new SkateboardSceneController(
                         client,
@@ -874,11 +798,6 @@ public class SkateScapePlugin extends Plugin {
             return;
         }
 
-        /*
-         * Trick Inspector lifecycle/browsing lives in its own controller. It
-         * still drives the exact shared trick timeline, so the frozen preview
-         * is a real state the live trick can pass through.
-         */
         if (trickInspector != null
                 && trickInspector.handleClientTick(player)) {
             updateSkateboard(player);
@@ -1050,13 +969,6 @@ public class SkateScapePlugin extends Plugin {
         skatingMovementController.restoreOriginalMovementAnimations(player);
     }
 
-    /*
-     * TRICK INSPECTOR BRIDGE.
-     *
-     * TrickInspector owns inspector lifecycle, browsing and inspector-only
-     * state. These bridges intentionally reuse the live trick timeline rather
-     * than duplicating it. That keeps the inspector honest.
-     */
     void enterTrickInspectorMode(Player player) {
         if (trickActive) {
             restorePlayerAfterTrick(player);
@@ -1300,20 +1212,6 @@ public class SkateScapePlugin extends Plugin {
         return skatingMovementController.updateMovementState(player);
     }
 
-    /*
-     * SHARED TRICK ENGINE / PLAYER CHOREOGRAPHY
-     *
-     * The engine owns shared timing, anchors, pop, landing and cleanup.
-     * TrickDefinition and per-trick pose data supply the trick-specific board
-     * and player choreography.
-     */
-    /*
-     * PLAYER TRICK ANIMATION CONTEXT.
-     *
-     * The prepared timeline is passed to PlayerTrickAnimationController
-     * through one reusable context object so player playback reads the same
-     * timing state as the runtime and board controllers.
-     */
     private void syncPlayerTrickAnimationContext() {
         if (playerTrickAnimationController == null) {
             return;
@@ -1486,13 +1384,6 @@ public class SkateScapePlugin extends Plugin {
         }
     }
 
-    /*
-     * TIMELINE BUILDER EXTRACTION.
-     *
-     * All config-heavy PRE / MAIN / seam / RETURN timeline construction now
-     * lives in TrickTimelineBuilder. These bridges keep runtime and board
-     * rendering on the same prepared state.
-     */
     void prepareTrickTimeline(
             Animation animation,
             TrickDefinition definition) {
@@ -1520,7 +1411,6 @@ public class SkateScapePlugin extends Plugin {
                 : trickTimelineBuilder
                         .getCycleOffsetAtActiveTrickFrame(nativeFrame);
     }
-
 
     /*
      * Read-only phase label used by the developer Trick Inspector.
@@ -1593,13 +1483,6 @@ public class SkateScapePlugin extends Plugin {
         return skatingMovementController.isPlayerStillMoving(player);
     }
 
-    /*
-     * RUNTIME/LIFECYCLE BRIDGES.
-     *
-     * Plugin lifecycle and inspector paths still need to restore/reset trick
-     * state, while the implementation itself lives with the phase machine in
-     * TrickRuntimeController.
-     */
     private void restorePlayerAfterTrick(
             Player player) {
 
@@ -2031,7 +1914,6 @@ public class SkateScapePlugin extends Plugin {
         );
     }
 
-    /* Animation Inspector state is owned by AnimationInspector. */
     int getAnimationBrowseMaxFrame() {
         return animationInspector == null
                 ? -1

@@ -8,17 +8,6 @@ import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.util.HotkeyListener;
 
-/**
- * Handles hotkey registration and keyboard routing. TrickRuntimeController
- * owns trick buffering and decides when pending input is consumed.
- *
- * <p>Developer-tool arrow-key priority:</p>
- * <ul>
- *     <li>Trick Inspector while enabled.</li>
- *     <li>Animation Inspector otherwise.</li>
- *     <li>Modified keys and non-game-canvas input are ignored.</li>
- * </ul>
- */
 final class SkateScapeInputController {
     private final Client client;
     private final SkateScapeConfig config;

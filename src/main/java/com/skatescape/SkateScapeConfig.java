@@ -78,12 +78,6 @@ public interface SkateScapeConfig extends Config {
             closedByDefault = false
     )
     String trickControlsSection = "trickControls";
-
-    /*
-     * Developer-only editor section keys. The public release does not register
-     * these as ConfigSections, and their ConfigItems are hidden below. A local
-     * development build can re-register/unhide them when new tricks need tuning.
-     */
     String trickTuningSection = "trickTuning";
     String trickInspectorSection = "trickInspector";
     String poseTuningSection = "poseTuning";
@@ -145,12 +139,7 @@ public interface SkateScapeConfig extends Config {
         return new Keybind(KeyEvent.VK_5, InputEvent.ALT_DOWN_MASK);
     }
 
-    // ---------------------------------------------------------------------
-    // Developer-only Trick Tuning editor. Per-trick values remain available
-    // in source/config storage, but the public settings panel hides this UI.
-    // Some persisted key names retain their original suffixes so existing
-    // RuneLite config remains compatible; changing them requires migration.
-    // ---------------------------------------------------------------------
+    // Keep persisted Vxxx keys stable; existing RuneLite settings use them.
 
     @ConfigItem(
             keyName = "tuningSelectedTrickV132",
@@ -509,7 +498,6 @@ public interface SkateScapeConfig extends Config {
     default TrickSelection poseSelectedTrick() {
         return TrickSelection.KICKFLIP;
     }
-
 
     @ConfigItem(
             keyName = "poseAnimationIdsV132",

@@ -4,10 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.ModelData;
 
-/**
- * Builds the single combined skateboard model used by SkateScape.
- * Raw model construction stays isolated from runtime/trick coordination.
- */
 @Slf4j
 final class SkateboardModelFactory {
     private static final int MODEL_SCALE_BASE = 128;
