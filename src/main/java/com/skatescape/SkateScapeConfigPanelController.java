@@ -5,19 +5,25 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.KeyboardFocusManager;
-import java.awt.KeyEventDispatcher;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.AWTEventListener;
+import java.awt.event.ActionEvent;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
+import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeListener;
@@ -43,10 +49,6 @@ final class SkateScapeConfigPanelController {
     }
 
     void installListeners() {
-        KeyboardFocusManager
-                .getCurrentKeyboardFocusManager()
-                .addKeyEventDispatcher(configSpinnerArrowGuard);
-
         Toolkit.getDefaultToolkit()
                 .addAWTEventListener(
                         configPanelVisibilityListener,
@@ -62,9 +64,7 @@ final class SkateScapeConfigPanelController {
          */
         restoreOpenRuneLiteConfigPanel();
 
-        KeyboardFocusManager
-                .getCurrentKeyboardFocusManager()
-                .removeKeyEventDispatcher(configSpinnerArrowGuard);
+        uninstallSpinnerArrowBindings();
 
         Toolkit.getDefaultToolkit()
                 .removeAWTEventListener(configPanelVisibilityListener);
@@ -261,142 +261,249 @@ final class SkateScapeConfigPanelController {
                 );
             };
 
-    /*
-     * RUNE LITE CONFIG SPINNER ARROW GUARD.
-     *
-     * RuneLite's spinner key bindings can hand an Up/Down key to the
-     * surrounding UI when the spinner is already at its boundary. That made
-     * the plugin-list/sidebar start scrolling. Consume only those boundary
-     * presses, and only while a SkateScape config spinner owns focus.
-     *
-     */
-    private final KeyEventDispatcher configSpinnerArrowGuard =
-            event -> {
-                if (event.getID() != KeyEvent.KEY_PRESSED
-                        || (event.getKeyCode() != KeyEvent.VK_UP
-                                && event.getKeyCode() != KeyEvent.VK_DOWN)
-                        || event.isControlDown()
-                        || event.isAltDown()
-                        || event.isShiftDown()
-                        || event.isMetaDown()) {
-                    return false;
-                }
 
-                final Component focusOwner =
-                        KeyboardFocusManager
-                                .getCurrentKeyboardFocusManager()
-                                .getFocusOwner();
+    private static final String SPINNER_UP_ACTION =
+            "skatescape-spinner-up";
+    private static final String SPINNER_DOWN_ACTION =
+            "skatescape-spinner-down";
 
-                final JSpinner spinner =
-                        findAncestorSpinner(focusOwner);
+    private final Map<JSpinner, SpinnerArrowBinding>
+            spinnerArrowBindings = new IdentityHashMap<>();
 
-                if (spinner == null) {
-                    return false;
-                }
+    private static final class SpinnerArrowBinding {
+        private final InputMap inputMap;
+        private final ActionMap actionMap;
+        private final Object originalUpKey;
+        private final Object originalDownKey;
 
-                final Component configPanel =
-                        findAncestorByClassName(
-                                spinner,
-                                "net.runelite.client.plugins.config.ConfigPanel"
-                        );
+        private SpinnerArrowBinding(
+                InputMap inputMap,
+                ActionMap actionMap,
+                Object originalUpKey,
+                Object originalDownKey) {
 
-                if (configPanel == null
-                        || !isSkateScapeConfigPanel(configPanel)
-                        || !(spinner.getModel() instanceof SpinnerNumberModel)
-                        || !(spinner.getValue() instanceof Number)) {
-                    return false;
-                }
+            this.inputMap = inputMap;
+            this.actionMap = actionMap;
+            this.originalUpKey = originalUpKey;
+            this.originalDownKey = originalDownKey;
+        }
+    }
 
-                final SpinnerNumberModel model =
-                        (SpinnerNumberModel) spinner.getModel();
-
-                final double currentValue =
-                        ((Number) spinner.getValue()).doubleValue();
-
-                double minimum =
-                        model.getMinimum() instanceof Number
-                                ? ((Number) model.getMinimum()).doubleValue()
-                                : -Double.MAX_VALUE;
-
-                double maximum =
-                        model.getMaximum() instanceof Number
-                                ? ((Number) model.getMaximum()).doubleValue()
-                                : Double.MAX_VALUE;
-
-                final String label =
-                        getSpinnerLabel(spinner);
-
-                /*
-                 * While Animation Inspector is ON, RuneLite can also react to
-                 * Up/Down after the Animation ID spinner changes. Handle that
-                 * spinner here so the ID still moves by one but the same
-                 * keypress never reaches the plugin sidebar.
-                 */
-                if (config.animationTest()
-                        && "Animation ID".equals(label)) {
-
-                    final int currentId =
-                            ((Number) spinner.getValue()).intValue();
-
-                    final int nextId =
-                            Math.max(
-                                    0,
-                                    Math.min(
-                                            maxSafeAnimationId,
-                                            currentId
-                                                    + (event.getKeyCode()
-                                                            == KeyEvent.VK_UP
-                                                            ? 1
-                                                            : -1)
-                                    )
-                            );
-
-                    if (nextId != currentId) {
-                        spinner.setValue(nextId);
-                    }
-
-                    event.consume();
-                    return true;
-                }
-
-                if ("Trick position (cycle)".equals(label)) {
-                    maximum = getLiveInspectorMaxCycle();
-                } else if ("Animation frame".equals(label)
-                        && config.animationTest()
-                        && plugin.getAnimationBrowseMaxFrame() >= 0) {
-                    maximum = plugin.getAnimationBrowseMaxFrame();
-                } else if ("Animation ID".equals(label)) {
-                    maximum = maxSafeAnimationId;
-                }
-
-                final boolean atUpperBoundary =
-                        event.getKeyCode() == KeyEvent.VK_UP
-                                && currentValue >= maximum;
-
-                final boolean atLowerBoundary =
-                        event.getKeyCode() == KeyEvent.VK_DOWN
-                                && currentValue <= minimum;
-
-                if (atUpperBoundary || atLowerBoundary) {
-                    event.consume();
-                    return true;
-                }
-
-                return false;
-            };
-
-    private JSpinner findAncestorSpinner(Component component) {
-        Component current = component;
-
-        while (current != null) {
-            if (current instanceof JSpinner) {
-                return (JSpinner) current;
-            }
-
-            current = current.getParent();
+    private void installSpinnerArrowBindings(Component component) {
+        if (component == null) {
+            return;
         }
 
-        return null;
+        if (component instanceof JSpinner) {
+            installSpinnerArrowBinding((JSpinner) component);
+        }
+
+        if (component instanceof Container) {
+            for (Component child : ((Container) component).getComponents()) {
+                installSpinnerArrowBindings(child);
+            }
+        }
+    }
+
+    private void installSpinnerArrowBinding(JSpinner spinner) {
+        if (spinnerArrowBindings.containsKey(spinner)) {
+            return;
+        }
+
+        final InputMap inputMap =
+                spinner.getInputMap(
+                        JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+                );
+
+        final ActionMap actionMap = spinner.getActionMap();
+
+        final KeyStroke upKey =
+                KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0);
+        final KeyStroke downKey =
+                KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0);
+
+        if (!(spinner.getModel() instanceof SpinnerNumberModel)) {
+            return;
+        }
+
+        final Object originalUpKey = inputMap.get(upKey);
+        final Object originalDownKey = inputMap.get(downKey);
+
+        spinnerArrowBindings.put(
+                spinner,
+                new SpinnerArrowBinding(
+                        inputMap,
+                        actionMap,
+                        originalUpKey,
+                        originalDownKey
+                )
+        );
+
+        actionMap.put(
+                SPINNER_UP_ACTION,
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                        handleSpinnerArrow(spinner, true);
+                    }
+                }
+        );
+
+        actionMap.put(
+                SPINNER_DOWN_ACTION,
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                        handleSpinnerArrow(spinner, false);
+                    }
+                }
+        );
+
+        inputMap.put(upKey, SPINNER_UP_ACTION);
+        inputMap.put(downKey, SPINNER_DOWN_ACTION);
+    }
+
+    private void uninstallSpinnerArrowBindings() {
+        final KeyStroke upKey =
+                KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0);
+        final KeyStroke downKey =
+                KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0);
+
+        for (Map.Entry<JSpinner, SpinnerArrowBinding> entry
+                : spinnerArrowBindings.entrySet()) {
+
+            final SpinnerArrowBinding binding = entry.getValue();
+
+            restoreKeyBinding(
+                    binding.inputMap,
+                    upKey,
+                    binding.originalUpKey
+            );
+
+            restoreKeyBinding(
+                    binding.inputMap,
+                    downKey,
+                    binding.originalDownKey
+            );
+
+            binding.actionMap.remove(SPINNER_UP_ACTION);
+            binding.actionMap.remove(SPINNER_DOWN_ACTION);
+        }
+
+        spinnerArrowBindings.clear();
+    }
+
+    private void restoreKeyBinding(
+            InputMap inputMap,
+            KeyStroke keyStroke,
+            Object originalKey) {
+
+        if (originalKey == null) {
+            inputMap.remove(keyStroke);
+        } else {
+            inputMap.put(keyStroke, originalKey);
+        }
+    }
+
+    private void handleSpinnerArrow(
+            JSpinner spinner,
+            boolean up) {
+
+        if (!(spinner.getModel() instanceof SpinnerNumberModel)
+                || !(spinner.getValue() instanceof Number)) {
+            return;
+        }
+
+        final SpinnerNumberModel model =
+                (SpinnerNumberModel) spinner.getModel();
+
+        final double currentValue =
+                ((Number) spinner.getValue()).doubleValue();
+
+        double minimum =
+                model.getMinimum() instanceof Number
+                        ? ((Number) model.getMinimum()).doubleValue()
+                        : -Double.MAX_VALUE;
+
+        double maximum =
+                model.getMaximum() instanceof Number
+                        ? ((Number) model.getMaximum()).doubleValue()
+                        : Double.MAX_VALUE;
+
+        final String label = getSpinnerLabel(spinner);
+
+        if (config.animationTest()
+                && "Animation ID".equals(label)) {
+
+            final int currentId =
+                    ((Number) spinner.getValue()).intValue();
+
+            final int nextId =
+                    Math.max(
+                            0,
+                            Math.min(
+                                    maxSafeAnimationId,
+                                    currentId + (up ? 1 : -1)
+                            )
+                    );
+
+            if (nextId != currentId) {
+                spinner.setValue(nextId);
+            }
+
+            return;
+        }
+
+        if ("Trick position (cycle)".equals(label)) {
+            maximum = getLiveInspectorMaxCycle();
+        } else if ("Animation frame".equals(label)
+                && config.animationTest()
+                && plugin.getAnimationBrowseMaxFrame() >= 0) {
+            maximum = plugin.getAnimationBrowseMaxFrame();
+        } else if ("Animation ID".equals(label)) {
+            maximum = maxSafeAnimationId;
+        }
+
+        if ((up && currentValue >= maximum)
+                || (!up && currentValue <= minimum)) {
+            return;
+        }
+
+        final Object nextValue =
+                up
+                        ? model.getNextValue()
+                        : model.getPreviousValue();
+
+        if (!(nextValue instanceof Number)) {
+            return;
+        }
+
+        final double nextNumber =
+                ((Number) nextValue).doubleValue();
+
+        if (up && nextNumber > maximum) {
+            setSpinnerNumberValue(spinner, maximum);
+        } else if (!up && nextNumber < minimum) {
+            setSpinnerNumberValue(spinner, minimum);
+        } else {
+            spinner.setValue(nextValue);
+        }
+    }
+
+    private void setSpinnerNumberValue(
+            JSpinner spinner,
+            double value) {
+
+        final Object current = spinner.getValue();
+
+        if (current instanceof Float
+                || current instanceof Double) {
+            spinner.setValue(value);
+        } else if (current instanceof Long) {
+            spinner.setValue((long) value);
+        } else {
+            spinner.setValue((int) value);
+        }
     }
 
     private Component findAncestorByClassName(
@@ -2161,10 +2268,8 @@ final class SkateScapeConfigPanelController {
         }
 
         /*
-         * Trick Inspector's declared range is intentionally broad, but while
-         * an inspector timeline is live, make the spinner stop at the real
-         * final cycle as well. The global key guard below is the fallback if
-         * the timeline changes after this panel was built.
+         * Keep the inspector spinner on the live timeline range. The local
+         * Up/Down binding re-checks the live maximum if the timeline changes.
          */
         final JSpinner inspectorCycleSpinner =
                 findLabeledSpinner(
@@ -2238,6 +2343,8 @@ final class SkateScapeConfigPanelController {
             animationFrameModel.setMinimum(0);
             animationFrameModel.setMaximum(plugin.getAnimationBrowseMaxFrame());
         }
+
+        installSpinnerArrowBindings(configPanel);
 
         configPanel.revalidate();
         configPanel.repaint();
